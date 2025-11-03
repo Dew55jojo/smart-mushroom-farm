@@ -1,0 +1,132 @@
+[
+    {
+        "id": "3f1873309dff50fa",
+        "type": "tab",
+        "label": "ESP32 to PostgreSQL",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "1a9297b48b3ae35e",
+        "type": "http in",
+        "z": "3f1873309dff50fa",
+        "name": "ESP32 HTTP In",
+        "url": "/mushroom",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 280,
+        "y": 180,
+        "wires": [
+            [
+                "1c91334e53d51cb5"
+            ]
+        ]
+    },
+    {
+        "id": "1c91334e53d51cb5",
+        "type": "function",
+        "z": "3f1873309dff50fa",
+        "name": "Parse JSON & Prepare SQL",
+        "func": "// แปลง payload เป็น object\nlet data = (typeof msg.payload === 'string') ? JSON.parse(msg.payload) : msg.payload;\n\n// fallback ถ้าไม่มีค่า\nlet temp_in = data.temp_in || 0;\nlet temp_out = data.temp_out || 0;\nlet hum_in = data.hum_in || 0;\nlet hum_out = data.hum_out || 0;\nlet co2 = data.co2 || 0;\nlet ldr = data.ldr || 0;\n\n// SQL query ใช้ placeholders\nmsg.topic = \"INSERT INTO mushroomdata (temp_in, temp_out, hum_in, hum_out, co2, ldr, timestamp) VALUES ($1,$2,$3,$4,$5,$6,now())\";\n\n// ส่งค่าผ่าน msg.payload เป็น array (สำคัญ!)\nmsg.payload = [temp_in, temp_out, hum_in, hum_out, co2, ldr];\n\n// สำหรับ HTTP response\nmsg.response = { status: 'ok', received: data };\nmsg.params = [temp_in,temp_out,hum_in,hum_out,co2,ldr];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 220,
+        "wires": [
+            [
+                "19072afb5e196adf",
+                "9150bf3f4faf9db0",
+                "31471b0189821976"
+            ]
+        ]
+    },
+    {
+        "id": "19072afb5e196adf",
+        "type": "postgresql",
+        "z": "3f1873309dff50fa",
+        "name": "Insert Mushroom Data",
+        "query": "INSERT INTO mushroomdata (temp_in, temp_out, hum_in, hum_out, co2, ldr, timestamp) \nVALUES ($1,$2,$3,$4,$5,$6,now());",
+        "postgreSQLConfig": "35f22178bb40a28a",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 760,
+        "y": 320,
+        "wires": [
+            [
+                "5566a85494f4691c"
+            ]
+        ]
+    },
+    {
+        "id": "5566a85494f4691c",
+        "type": "debug",
+        "z": "3f1873309dff50fa",
+        "name": "Postgres Result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "x": 960,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "9150bf3f4faf9db0",
+        "type": "http response",
+        "z": "3f1873309dff50fa",
+        "name": "HTTP Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 980,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "31471b0189821976",
+        "type": "debug",
+        "z": "3f1873309dff50fa",
+        "name": "debug 23",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "35f22178bb40a28a",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "localhost",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "mushroom_farm",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]
